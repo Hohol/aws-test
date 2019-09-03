@@ -21,6 +21,8 @@ from flask_wtf.file import FileField, FileRequired
 from wtforms import TextAreaField
 import flask_login
 from jose import jwt
+from aws_xray_sdk.core import xray_recorder, patch_all
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
 import config
 import util
@@ -37,6 +39,12 @@ login_manager.init_app(application)
 JWKS_URL = ("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json"
             % (config.AWS_REGION, config.COGNITO_POOL_ID))
 JWKS = requests.get(JWKS_URL).json()["keys"]
+
+### x-ray set up
+plugins = ('EC2Plugin',)
+xray_recorder.configure(service='MyApplication', plugins=plugins)
+XRayMiddleware(application, xray_recorder)
+patch_all()
 
 ### FlaskForm set up
 class PhotoForm(FlaskForm):
@@ -231,7 +239,6 @@ def login():
                      "&redirect_uri=%s/callback" %
                      (config.COGNITO_DOMAIN, config.COGNITO_CLIENT_ID, session['csrf_state'],
                       config.BASE_URL))
-    print(cognito_login)
     return redirect(cognito_login)
 
 @application.route("/logout")
