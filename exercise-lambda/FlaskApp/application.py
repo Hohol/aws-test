@@ -24,7 +24,6 @@ from jose import jwt
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
-
 import config
 import util
 import database
@@ -78,8 +77,6 @@ def user_loader(session_token):
 @application.route("/")
 def home():
     """Homepage route"""
-    document = xray_recorder.current_segment()
-    document.put_annotation("username", session['nickname'])
     return render_template_string("""
         {% extends "main.html" %}
         {% block content %}
@@ -130,17 +127,9 @@ def myphotos():
                 Params={'Bucket': config.PHOTOS_BUCKET, 'Key': key})
 
             #######
-            # rekcognition exercise
+            # rekcognition exercise - this code has moved to lambda
             #######
-            rek = boto3.client('rekognition')
-            response = rek.detect_labels(
-                Image={
-                    'S3Object': {
-                        'Bucket': config.PHOTOS_BUCKET,
-                        'Name': key
-                    }
-                })
-            all_labels = [label['Name'] for label in response['Labels']]
+            all_labels = ["Processing labels asyncronously"]
 
             #######
             # rds excercise
